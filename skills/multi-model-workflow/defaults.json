@@ -1,0 +1,8 @@
+{
+  "assistant_model": "glm-5.3-flash",
+  "assistant_effort": "high",
+  "max_rounds": 3,
+  "call_timeout_seconds": 300,
+  "total_timeout_seconds": 1200,
+  "codex_binary": "codex"
+}

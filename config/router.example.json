@@ -1,0 +1,15 @@
+{
+  "routes": {
+    "glm-5.3-flash": {
+      "base_url": "https://glm.example.invalid/v1",
+      "api_key_env": ""
+    },
+    "deepseek-v4-1-flash-260910": {
+      "base_url": "https://deepseek.example.invalid/v1",
+      "api_key_env": ""
+    }
+  },
+  "tool_search": true,
+  "context_window": 1048576,
+  "effective_context_window_percent": 95
+}

@@ -1,0 +1,209 @@
+{
+  "evidence_type": "Historical verification from source session, not a rerun of the portable distribution",
+  "source_session": "01a11b4d-88eb-71e0-ba77-bbe16234b48b",
+  "data": {
+    "completed_at": "2026-10-09T10:21:48.959300",
+    "installed": true,
+    "port": 17864,
+    "health": {
+      "status": "ok",
+      "service": "codex-model-router"
+    },
+    "unit_test_count": 19,
+    "unit_tests_passed": true,
+    "runtime": {
+      "isolated": {
+        "glm-5.3-flash": {
+          "passed": true,
+          "search_call_observed": true,
+          "search_calls_observed": null,
+          "mcp_calls": [
+            {
+              "name": "read_checkpoint_value",
+              "arguments": {
+                "stage": "initial"
+              }
+            }
+          ],
+          "answer_matches": true
+        },
+        "deepseek-v4-1-flash-260910": {
+          "passed": true,
+          "search_call_observed": true,
+          "search_calls_observed": null,
+          "mcp_calls": [
+            {
+              "name": "read_checkpoint_value",
+              "arguments": {
+                "stage": "initial"
+              }
+            }
+          ],
+          "answer_matches": true
+        }
+      },
+      "lifecycle": {
+        "glm-5.3-flash": {
+          "passed": true,
+          "search_call_observed": null,
+          "search_calls_observed": 3,
+          "mcp_calls": [
+            {
+              "name": "read_checkpoint_value",
+              "arguments": {
+                "stage": "initial"
+              }
+            },
+            {
+              "name": "read_checkpoint_value",
+              "arguments": {
+                "stage": "followup"
+              }
+            },
+            {
+              "name": "read_recovery_value",
+              "arguments": {
+                "stage": "followup"
+              }
+            },
+            {
+              "name": "read_checkpoint_value",
+              "arguments": {
+                "stage": "resumed"
+              }
+            }
+          ],
+          "answer_matches": null
+        },
+        "deepseek-v4-1-flash-260910": {
+          "passed": true,
+          "search_call_observed": null,
+          "search_calls_observed": 2,
+          "mcp_calls": [
+            {
+              "name": "read_checkpoint_value",
+              "arguments": {
+                "stage": "initial"
+              }
+            },
+            {
+              "name": "read_checkpoint_value",
+              "arguments": {
+                "stage": "followup"
+              }
+            },
+            {
+              "name": "read_recovery_value",
+              "arguments": {
+                "stage": "followup"
+              }
+            },
+            {
+              "name": "read_checkpoint_value",
+              "arguments": {
+                "stage": "resumed"
+              }
+            }
+          ],
+          "answer_matches": null
+        }
+      },
+      "installed": {
+        "glm-5.3-flash": {
+          "passed": true,
+          "search_call_observed": true,
+          "search_calls_observed": null,
+          "mcp_calls": [
+            {
+              "name": "read_checkpoint_value",
+              "arguments": {
+                "stage": "initial"
+              }
+            }
+          ],
+          "answer_matches": true
+        },
+        "deepseek-v4-1-flash-260910": {
+          "passed": true,
+          "search_call_observed": true,
+          "search_calls_observed": null,
+          "mcp_calls": [
+            {
+              "name": "read_checkpoint_value",
+              "arguments": {
+                "stage": "initial"
+              }
+            }
+          ],
+          "answer_matches": true
+        }
+      }
+    },
+    "gpt": [
+      {
+        "phase": "gpt-isolation",
+        "passed": true,
+        "protocol": "Unmodified Responses Lite",
+        "answer_matches": true,
+        "actual_mcp_calls": [
+          {
+            "name": "read_checkpoint_value",
+            "arguments": {
+              "stage": "initial"
+            }
+          }
+        ],
+        "native_company_protocol_assertions": "Not applicable to GPT Lite; retained raw generic harness reports passed=false for those assertions"
+      },
+      {
+        "phase": "installed-gpt",
+        "passed": true,
+        "protocol": "Unmodified Responses Lite",
+        "answer_matches": true,
+        "actual_mcp_calls": [
+          {
+            "name": "read_checkpoint_value",
+            "arguments": {
+              "stage": "initial"
+            }
+          }
+        ],
+        "native_company_protocol_assertions": "Not applicable to GPT Lite; retained raw generic harness reports passed=false for those assertions"
+      }
+    ],
+    "comparison": [
+      {
+        "model": "glm-5.3-flash",
+        "eager_tool_definition_bytes": 502460,
+        "deferred_tool_definition_bytes": 31557,
+        "eager_first_input_tokens": 116825,
+        "deferred_first_input_tokens": 12626,
+        "input_token_reduction_percent": 89.19,
+        "scope": "Same normal configuration and 101-tool fixture; short read-only task, not a general workload benchmark"
+      },
+      {
+        "model": "deepseek-v4-1-flash-260910",
+        "eager_tool_definition_bytes": 502460,
+        "deferred_tool_definition_bytes": 31557,
+        "eager_first_input_tokens": 122121,
+        "deferred_first_input_tokens": 13173,
+        "input_token_reduction_percent": 89.21,
+        "scope": "Same normal configuration and 101-tool fixture; short read-only task, not a general workload benchmark"
+      }
+    ],
+    "changed_catalog_fields": {
+      "changes": [
+        {
+          "model": "deepseek-v4-1-flash-260910",
+          "field": "supports_search_tool",
+          "before": false,
+          "after": true
+        }
+      ],
+      "model_count": 11
+    },
+    "uninstall_validation": "Exact file roundtrip, subsequent edits protected, restart failure rollback; tested in isolated temp targets",
+    "full_router_uninstall": "Current TOML merge parsed and checked to preserve every unrelated setting; production uninstall not executed",
+    "desktop_restart_performed": false
+  }
+}

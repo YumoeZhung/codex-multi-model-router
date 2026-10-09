@@ -1,0 +1,92 @@
+[
+  {
+    "component": "router.py",
+    "source": "session-3/runtime/router.py",
+    "source_sha256": "91c57f4d6794434d3a8e0fa5136c3e539341e13678c729ba1687b6d48ee032a6"
+  },
+  {
+    "component": "tool_search_adapter.py",
+    "source": "session-3/runtime/tool_search_adapter.py",
+    "source_sha256": "7c6edcce75eaa4946b4cbc7b9c746bd535d135c4a4f034f33b0c314f3b36e2f4"
+  },
+  {
+    "component": "tests/test_router.py",
+    "source": "session-3/runtime/test_router.py",
+    "source_sha256": "0ff144c3161c46c30f4a27d76b3235db28aa36d4473005f3a92dc53720f40648"
+  },
+  {
+    "component": "tests/test_tool_search_adapter.py",
+    "source": "session-3/runtime/test_tool_search_adapter.py",
+    "source_sha256": "8a673424e9fbb71fe8ac006bfc8c8b1ae2b96afa739ef89937f604fd91a25a65"
+  },
+  {
+    "component": "skills/multi-model-workflow/.gitignore",
+    "source": "session-2/skill/.gitignore",
+    "source_sha256": "862263fa1f46c20f0d1e4dac5ffcc75abd55c08211b2c3864c5f8764b9d87793"
+  },
+  {
+    "component": "skills/multi-model-workflow/SKILL.md",
+    "source": "session-2/skill/SKILL.md",
+    "source_sha256": "65ca7f277aa8b7f7a1793136a1c2663eeb6ca82be3db895ff85abd3bbab282e5"
+  },
+  {
+    "component": "skills/multi-model-workflow/agents/openai.yaml",
+    "source": "session-2/skill/agents/openai.yaml",
+    "source_sha256": "5f98bee3db31d0975fe56feabab61ddcae5270f5763a5e61ccf0331d6404c94e"
+  },
+  {
+    "component": "skills/multi-model-workflow/defaults.json",
+    "source": "session-2/skill/defaults.json",
+    "source_sha256": "0d29621774af92058d596a214c4ce20888fa487bc8eba1c33a6487bc4c76f3b1"
+  },
+  {
+    "component": "skills/multi-model-workflow/references/contracts.md",
+    "source": "session-2/skill/references/contracts.md",
+    "source_sha256": "7c6458d024d8a9f1c81b6a16934a40f5412567357cb849ed9e8b4c0cd598691a"
+  },
+  {
+    "component": "skills/multi-model-workflow/references/delegation-policy.md",
+    "source": "session-2/skill/references/delegation-policy.md",
+    "source_sha256": "cb757a4e920237aba0686d314560389dc01e195577909d8679f82a0755682f9b"
+  },
+  {
+    "component": "skills/multi-model-workflow/references/native-dispatch.md",
+    "source": "session-2/skill/references/native-dispatch.md",
+    "source_sha256": "e1b9af57f9870b169d633b47502dd46720f8de13a9fabff3c8b41dfe0d5b1f82"
+  },
+  {
+    "component": "skills/multi-model-workflow/references/test-expansion.md",
+    "source": "session-2/skill/references/test-expansion.md",
+    "source_sha256": "8ce00d919bfb6144e12d4d01cbb773e548f6981ee91b5c2c4380e1d3bf0437d1"
+  },
+  {
+    "component": "skills/multi-model-workflow/scripts/manage.py",
+    "source": "session-2/skill/scripts/manage.py",
+    "source_sha256": "a491e8f17d7b560a575b7dbc2bb37c1a338816a3ac8285a66484fd243a473b7d"
+  },
+  {
+    "component": "skills/multi-model-workflow/scripts/native_bridge.py",
+    "source": "session-2/skill/scripts/native_bridge.py",
+    "source_sha256": "21931cd0622724ad78720aff6ae2e3650d39b669d22d70c9c9605ee4699e68c9"
+  },
+  {
+    "component": "skills/multi-model-workflow/scripts/workflow.py",
+    "source": "session-2/skill/scripts/workflow.py",
+    "source_sha256": "2c4b50aaaf488f2f686b110f6e2957848e79bea43dfe0a7f9da477c7c869dba4"
+  },
+  {
+    "component": "skills/multi-model-workflow/tests/VALIDATION.md",
+    "source": "session-2/skill/tests/VALIDATION.md",
+    "source_sha256": "0a22889ab7d882b63aa8cfe2106ce6c5351c23c8ba9f484868056430644019a0"
+  },
+  {
+    "component": "skills/multi-model-workflow/tests/test_lifecycle.py",
+    "source": "session-2/skill/tests/test_lifecycle.py",
+    "source_sha256": "d2c0b75abbfdd07c6b32f416046fb0b4dfe1b67370f63a9a70ffdf8401982e6c"
+  },
+  {
+    "component": "skills/multi-model-workflow/tests/test_workflow.py",
+    "source": "session-2/skill/tests/test_workflow.py",
+    "source_sha256": "92b9621fc8851f6583e767bc1acfa96fb15cbda3d694e09d09687ee7855c1f30"
+  }
+]

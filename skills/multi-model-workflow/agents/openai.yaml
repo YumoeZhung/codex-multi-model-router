@@ -1,0 +1,4 @@
+interface:
+  display_name: "多模型审查与任务委派"
+  short_description: "主模型掌握判断权，辅助模型负责证据质疑与简单任务，执行有界循环并验收"
+  default_prompt: "使用 $multi-model-workflow，由当前主模型审查并裁决，让配置中的辅助模型取证、反驳，或完成明确的小任务。"

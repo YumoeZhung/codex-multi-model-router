@@ -1,0 +1,94 @@
+{
+  "evidence_type": "Historical verification from source session, not a rerun of the portable distribution",
+  "source_session": "01a11b4d-88eb-71e0-ba77-bbe16234b48b",
+  "data": {
+    "changed_at": "2026-10-09 Asia/Shanghai",
+    "models_changed": [
+      "deepseek-v4-1-flash-260910",
+      "glm-5.3-flash"
+    ],
+    "context_window": 1048576,
+    "max_context_window": 1048576,
+    "effective_context_window_percent": 95,
+    "tests": [
+      {
+        "model": "deepseek-v4-1-flash-260910",
+        "passed": true,
+        "maximum_observed_input_tokens": 340492,
+        "effective_windows": [
+          996147
+        ],
+        "normal_turns": [
+          {
+            "status": "completed",
+            "shell_calls": 1,
+            "automatic_compaction_items": 0
+          },
+          {
+            "status": "completed",
+            "shell_calls": 1,
+            "automatic_compaction_items": 0
+          }
+        ],
+        "manual_compaction_items": 1,
+        "post_compaction_input_tokens": [
+          126400,
+          126549
+        ],
+        "http_statuses": [
+          200,
+          200,
+          200,
+          200,
+          200
+        ],
+        "any_dsml_output": false,
+        "menu_preserved": true
+      },
+      {
+        "model": "glm-5.3-flash",
+        "passed": true,
+        "maximum_observed_input_tokens": 257420,
+        "effective_windows": [
+          996147
+        ],
+        "normal_turns": [
+          {
+            "status": "completed",
+            "shell_calls": 1,
+            "automatic_compaction_items": 0
+          },
+          {
+            "status": "completed",
+            "shell_calls": 1,
+            "automatic_compaction_items": 0
+          }
+        ],
+        "manual_compaction_items": 1,
+        "post_compaction_input_tokens": [
+          34377,
+          34491
+        ],
+        "http_statuses": [
+          200,
+          200,
+          200,
+          200,
+          200
+        ],
+        "any_dsml_output": false,
+        "menu_preserved": true
+      }
+    ],
+    "routing_and_config_unchanged": true,
+    "only_six_window_fields_changed": true,
+    "capability_flags_unchanged": true,
+    "activation": "Fresh isolated app-server processes read the new catalog and report 996147 effective tokens. Existing desktop process activation is not verified; restart desktop app to ensure reload.",
+    "limits": [
+      "No 1M-token boundary request was performed.",
+      "Manual compaction and bounded task resumption passed; this is not a guarantee for all long-running tasks.",
+      "Normal user configuration was retained. The pre-existing computer-use MCP executable failed to start in standalone app-server tests; desktop-only runtime behavior was not replicated exactly.",
+      "Previously lost or malformed summaries in existing conversations are not repaired by changing the model window."
+    ]
+  }
+}
