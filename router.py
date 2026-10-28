@@ -5,6 +5,7 @@ import importlib.util
 import json
 import os
 import ssl
+import subprocess
 import threading
 import time
 import urllib.error
@@ -23,7 +24,7 @@ OPENAI_BASE = "https://chatgpt.com/backend-api/codex"
 GLM_BASE = "https://glm.example.invalid/v1"
 GLM_MODEL = "glm-5.3-flash"
 DEEPSEEK_BASE = "https://deepseek.example.invalid/v1"
-DEEPSEEK_MODEL = "deepseek-v4-1-flash-260910"
+DEEPSEEK_MODEL = "deepseek-v4-1-flash-261017"
 COMPANY_ROUTES = {
     GLM_MODEL: (GLM_BASE, "glm"),
     DEEPSEEK_MODEL: (DEEPSEEK_BASE, "deepseek"),
@@ -32,6 +33,8 @@ ALLOWED_PATHS = {"/responses", "/responses/compact"}
 HOP_HEADERS = {"host", "connection", "proxy-connection", "keep-alive", "transfer-encoding",
                "upgrade", "te", "trailer", "proxy-authorization", "proxy-authenticate",
                "content-length", "x-codex-router-token"}
+CATALOG_LOCK = threading.Lock()
+CATALOG_STATE = {"binary": None, "identity": None, "mtime": 0, "error": None, "refresh_count": 0}
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -91,6 +94,87 @@ def select_route(model, incoming_headers, settings=None):
     raise ValueError("Model is not configured in the local router")
 
 
+def build_catalog(bundled, additions):
+    """Merge current GPT entries with exact local provider additions."""
+    models = bundled.get("models") if isinstance(bundled, dict) else None
+    if not isinstance(models, list) or not models:
+        raise ValueError("Bundled Codex catalog is empty or malformed")
+    output = []
+    seen = set()
+    for original in models:
+        if not isinstance(original, dict) or not isinstance(original.get("slug"), str):
+            raise ValueError("Bundled Codex catalog has an invalid model")
+        slug = original["slug"]
+        if not slug or slug in seen:
+            raise ValueError("Bundled Codex catalog has an invalid or duplicate slug")
+        seen.add(slug)
+        model = json.loads(json.dumps(original))
+        if slug.startswith("gpt-"):
+            model["visibility"] = "list"
+        output.append(model)
+    for slug in COMPANY_ROUTES:
+        if slug in seen:
+            raise ValueError("Local provider model conflicts with bundled Codex catalog")
+        model = json.loads(json.dumps(additions[slug]))
+        model["visibility"] = "list"
+        output.append(model)
+        seen.add(slug)
+    return {"models": output}
+
+
+def catalog_payload(server):
+    """Read the installed Codex catalog, falling back to the last good cache."""
+    binary = Path(server.catalog_binary).expanduser()
+    cache = Path(server.catalog_cache)
+    try:
+        stat = binary.stat()
+        identity = (str(binary.resolve()), stat.st_mtime_ns, stat.st_size)
+    except OSError as exc:
+        return read_cached_catalog(cache, exc)
+    with CATALOG_LOCK:
+        state = CATALOG_STATE
+        identity_changed = state["binary"] != identity[0] or state["identity"] != identity[1]
+        if identity_changed:
+            state["error"] = None
+        if state["binary"] == identity[0] and state["identity"] == identity[1] and state["error"] is None:
+            if state["mtime"] and time.time() - state["mtime"] < 300:
+                try:
+                    return json.loads(cache.read_text())
+                except (OSError, ValueError):
+                    pass
+        try:
+            result = subprocess.run(
+                [str(binary), "debug", "models", "--bundled"],
+                capture_output=True, text=True, timeout=30,
+                env={"HOME": str(Path.home()), "PATH": "/usr/bin:/bin",
+                     "NO_PROXY": "127.0.0.1,localhost"},
+            )
+            if result.returncode:
+                raise RuntimeError("Installed Codex model command failed")
+            catalog = build_catalog(json.loads(result.stdout), server.catalog_additions)
+            data = (json.dumps(catalog, ensure_ascii=False, indent=2) + "\n").encode()
+            tmp = cache.with_name(f".{cache.name}.{threading.get_ident()}.tmp")
+            tmp.write_bytes(data)
+            tmp.chmod(0o600)
+            tmp.replace(cache)
+            state.update(binary=identity[0], identity=identity[1], mtime=time.time(), error=None)
+            state["refresh_count"] += 1
+            return catalog
+        except Exception as exc:
+            state["error"] = type(exc).__name__
+            return read_cached_catalog(cache, exc)
+
+
+def read_cached_catalog(cache, cause):
+    try:
+        catalog = json.loads(cache.read_text())
+        if not isinstance(catalog.get("models"), list) or not catalog["models"]:
+            raise ValueError("empty catalog")
+        return catalog
+    except (OSError, ValueError, AttributeError) as exc:
+        raise ValueError("Codex catalog refresh failed and no cache exists") from exc
+
+
 def normalize_history(payload, route):
     """Provider-owned reasoning IDs are not portable; retain ordinary conversation/tool data."""
     result = dict(payload)
@@ -133,9 +217,20 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
-        if self.path == "/health":
+        path = urllib.parse.urlsplit(self.path).path
+        if path == "/health":
             self.reply(200, {"status": "ok", "service": "codex-model-router"})
-        elif self.path == "/status":
+        elif path in ("/v1/models", "/models"):
+            if not hmac.compare_digest(self.headers.get("X-Codex-Router-Token", ""), self.server.router_secret):
+                self.reply(403, {"error": "Local router authentication failed"})
+                return
+            try:
+                catalog = catalog_payload(self.server)
+            except ValueError as exc:
+                self.reply(503, {"error": str(exc)})
+                return
+            self.reply(200, catalog)
+        elif path == "/status":
             if not hmac.compare_digest(self.headers.get("X-Codex-Router-Token", ""), self.server.router_secret):
                 self.reply(403, {"error": "Local router authentication failed"})
                 return
@@ -234,6 +329,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=17864)
     parser.add_argument("--settings", required=True)
+    parser.add_argument("--catalog-binary", required=True)
+    parser.add_argument("--catalog-cache", required=True)
     parser.add_argument("--secret-file", required=True)
     parser.add_argument("--log-file", required=True)
     args = parser.parse_args()
@@ -245,6 +342,13 @@ def main():
         server.server_close()
         raise ValueError("Router secret must contain at least 24 characters")
     server.settings = settings
+    server.catalog_binary = args.catalog_binary
+    server.catalog_cache = args.catalog_cache
+    additions = {}
+    for slug in COMPANY_ROUTES:
+        path = Path(args.settings).with_name("model-templates") / (slug + ".json")
+        additions[slug] = json.loads(path.read_text())
+    server.catalog_additions = additions
     server.active_requests = 0
     server.activity_lock = threading.Lock()
     lock = threading.Lock()

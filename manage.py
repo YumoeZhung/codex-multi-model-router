@@ -71,10 +71,11 @@ def edit_root(text, values):
     return root + rest
 
 
-def configured_text(original, catalog, secret, port, default):
+def configured_text(original, secret, port, default):
     values = {"model": default, "model_provider": PROVIDER,
-              "model_catalog_json": str(catalog), "model_reasoning_summary": "none"}
+              "model_reasoning_summary": "none"}
     provider = {"name": "GPT + GLM + DeepSeek", "base_url": f"http://127.0.0.1:{port}/v1",
+                "model_catalog_url": f"http://127.0.0.1:{port}/v1/models",
                 "wire_api": "responses", "requires_openai_auth": True, "supports_websockets": False,
                 "http_headers": {"X-Codex-Router-Token": secret}}
     block = f"\n[model_providers.{PROVIDER}]\n"
@@ -203,10 +204,13 @@ class Manager:
             sock.bind(("127.0.0.1", port))
         return raw, settings, models, default
 
-    def install(self, settings_path, port=17864, proxy=None):
+    def install(self, settings_path, port=17864, proxy=None, codex_cli=None, launch_agents=None):
         raw, settings, models, default = self.preflight(settings_path, port)
         secret = secrets.token_urlsafe(32)
-        updated = configured_text(raw, self.target / "models.json", secret, port, default)
+        updated = configured_text(raw, secret, port, default)
+        plist_path = Path(launch_agents or self.plist.parent) / self.plist.name
+        if plist_path != self.plist and (self.target.exists() or plist_path.exists()):
+            raise ValueError("Installation directory or service already exists; preserve it and inspect status")
         backup = self.home / ("config.toml.before-multi-model-router-" + stamp())
         atomic_write(backup, raw.encode())
         self.target.mkdir(mode=0o700)
@@ -217,6 +221,8 @@ class Manager:
                 shutil.copy2(SOURCE / name, self.target / name)
             atomic_write(self.target / "router.secret", secret.encode())
             write_json(self.target / "router.local.json", settings)
+            shutil.copytree(SOURCE / "models", self.target / "model-templates",
+                            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
             write_json(self.target / "models.json", build_catalog(models, settings))
             atomic_write(self.target / "config.installed.toml", updated.encode())
             env = {"PYTHONUNBUFFERED": "1", "NO_PROXY": "localhost,127.0.0.1,::1"}
@@ -229,20 +235,22 @@ class Manager:
                 key = route.get("api_key_env")
                 if key:
                     env[key] = os.environ[key]
+            catalog_binary = codex_cli or shutil.which("codex") or "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex"
             plist = {"Label": LABEL, "ProgramArguments": [sys.executable, str(self.target / "router.py"),
                      "--port", str(port), "--settings", str(self.target / "router.local.json"),
+                     "--catalog-binary", str(catalog_binary), "--catalog-cache", str(self.target / "models.json"),
                      "--secret-file", str(self.target / "router.secret"), "--log-file", str(self.target / "events.jsonl")],
                      "RunAtLoad": True, "KeepAlive": True, "ThrottleInterval": 10,
                      "WorkingDirectory": str(self.target), "EnvironmentVariables": env,
                      "StandardOutPath": str(self.target / "stdout.log"), "StandardErrorPath": str(self.target / "stderr.log")}
-            self.plist.parent.mkdir(parents=True, exist_ok=True)
-            atomic_write(self.plist, plistlib.dumps(plist))
+            plist_path.parent.mkdir(parents=True, exist_ok=True)
+            atomic_write(plist_path, plistlib.dumps(plist))
             state = {"version": 1, "active": True, "backup": str(backup), "backup_sha256": digest(backup.read_bytes()),
-                     "installed_config_sha256": digest(updated.encode()), "port": port, "plist": str(self.plist),
-                     "original_argv": plist["ProgramArguments"]}
+                     "installed_config_sha256": digest(updated.encode()), "port": port, "plist": str(plist_path),
+                     "catalog_binary": str(catalog_binary), "original_argv": plist["ProgramArguments"]}
             write_json(self.target / "installation.json", state)
             service_attempted = True
-            self.service.start(self.plist)
+            self.service.start(plist_path)
             self.service.health(port)
             if self.config.read_text() != raw:
                 raise RuntimeError("Codex configuration changed concurrently; install cancelled")
@@ -253,7 +261,7 @@ class Manager:
                 self.service.stop()
             if config_written and self.config.read_text() == updated:
                 atomic_write(self.config, raw.encode())
-            self.plist.unlink(missing_ok=True)
+            plist_path.unlink(missing_ok=True)
             shutil.rmtree(self.target)
             raise
         return {"installed": True, "local_health": True, "upstream_verified": False,
@@ -309,27 +317,31 @@ class Manager:
     def tool_search(self, enabled):
         state = self.state()
         self.require_original_service(state)
-        config_path, catalog_path = self.target / "router.local.json", self.target / "models.json"
-        old_settings, old_catalog = config_path.read_bytes(), catalog_path.read_bytes()
-        settings, catalog = json.loads(old_settings), json.loads(old_catalog)
+        config_path = self.target / "router.local.json"
+        catalog_paths = [self.target / "model-templates" / (slug + ".json") for slug in COMPANY_ROUTES]
+        old_settings = config_path.read_bytes()
+        old_catalogs = [path.read_bytes() for path in catalog_paths]
+        settings = json.loads(old_settings)
         settings["tool_search"] = enabled
-        for model in catalog["models"]:
-            if model.get("slug") in COMPANY_ROUTES:
-                model["supports_search_tool"] = enabled
         archive = self.target / ("tool-search-before-" + stamp())
         archive.mkdir(mode=0o700)
         atomic_write(archive / config_path.name, old_settings)
-        atomic_write(archive / catalog_path.name, old_catalog)
+        for path, data in zip(catalog_paths, old_catalogs):
+            atomic_write(archive / path.name, data)
         self.service.stop()
         try:
             write_json(config_path, settings)
-            write_json(catalog_path, catalog)
+            for path, data in zip(catalog_paths, old_catalogs):
+                model = json.loads(data)
+                model["supports_search_tool"] = enabled
+                write_json(path, model)
             self.service.start(self.plist)
             self.service.health(state["port"])
         except BaseException:
             self.service.stop()
             atomic_write(config_path, old_settings)
-            atomic_write(catalog_path, old_catalog)
+            for path, data in zip(catalog_paths, old_catalogs):
+                atomic_write(path, data)
             self.service.start(self.plist)
             self.service.health(state["port"])
             raise
@@ -352,6 +364,8 @@ def main():
     parser.add_argument("--settings", type=Path)
     parser.add_argument("--port", type=int, default=17864)
     parser.add_argument("--proxy", help="Optional HTTP proxy URL; otherwise use this machine's proxy settings")
+    parser.add_argument("--codex-cli", type=Path, help="Installed Codex CLI used to discover the current bundled catalog")
+    parser.add_argument("--launch-agents", type=Path, help="LaunchAgent directory override for isolated validation")
     args = parser.parse_args()
     manager = Manager(args.codex_home)
     try:
@@ -361,7 +375,7 @@ def main():
             _, _, models, default = manager.preflight(args.settings, args.port)
             result = {"ready": True, "default_model": default, "gpt_models_preserved": len(models)}
         elif args.action == "install":
-            result = manager.install(args.settings, args.port, args.proxy)
+            result = manager.install(args.settings, args.port, args.proxy, args.codex_cli, args.launch_agents)
         elif args.action == "restore":
             result = manager.restore()
         elif args.action == "plan-restore":

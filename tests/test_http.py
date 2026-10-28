@@ -13,6 +13,8 @@ from unittest.mock import patch
 
 import router
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 class Upstream(BaseHTTPRequestHandler):
     def log_message(self, *_):
@@ -47,6 +49,9 @@ class Upstream(BaseHTTPRequestHandler):
 
 class HttpTests(unittest.TestCase):
     def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
         self.upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
         self.upstream.received = []
         self.start_server(self.upstream)
@@ -55,6 +60,12 @@ class HttpTests(unittest.TestCase):
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), router.Handler)
         self.server.router_secret = "fixture-router-secret-at-least-24-characters"
         self.server.settings = self.settings
+        self.server.catalog_binary = ROOT / "tests/fixtures/codex-cli"
+        self.server.catalog_cache = self.root / "catalog-cache.json"
+        self.server.catalog_additions = {
+            slug: json.loads((ROOT / "models" / (slug + ".json")).read_text())
+            for slug in router.COMPANY_ROUTES
+        }
         self.server.active_requests = 0
         self.server.activity_lock = threading.Lock()
         self.events = []
@@ -71,6 +82,12 @@ class HttpTests(unittest.TestCase):
             thread.join(timeout=3)
             server.server_close()
         self.addCleanup(finish)
+
+    def get(self, path, token=True):
+        headers = {} if not token else {"X-Codex-Router-Token": self.server.router_secret}
+        request = urllib.request.Request(f"http://127.0.0.1:{self.server.server_port}{path}", headers=headers)
+        with self.opener.open(request, timeout=3) as response:
+            return json.load(response)
 
     def post(self, payload, token=True, path="/v1/responses"):
         headers = {"Content-Type": "application/json", "Authorization": "Bearer openai-fixture-credential",
@@ -144,6 +161,74 @@ class HttpTests(unittest.TestCase):
     def test_compaction_endpoint_is_routed(self):
         self.post({"model": router.GLM_MODEL, "input": []}, path="/v1/responses/compact")
         self.assertEqual(self.upstream.received[-1][0], "/glm/responses/compact")
+
+    def test_dynamic_catalog_uses_installed_codex_and_company_additions(self):
+        catalog = self.get("/v1/models?client_version=fixture")
+        self.assertEqual([m["slug"] for m in catalog["models"]],
+                         ["gpt-6-astra", "gpt-6.1-sol", "gpt-6.1-terra", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol",
+                          "gpt-5.6-terra", "gpt-5.6-luna", "gpt-daybreak-blue-latest",
+                          "gpt-daybreak-red-latest", "gpt-5.5", "codex-auto-review",
+                          "glm-5.3-flash", "deepseek-v4-1-flash-261017"])
+        self.assertIn("gpt-6.1-sol", [m["slug"] for m in catalog["models"]])
+        self.assertIn("gpt-6-astra", [m["slug"] for m in catalog["models"]])
+        self.assertTrue((self.root / "catalog-cache.json").exists())
+        self.assertEqual(catalog["models"][-2],
+                         self.server.catalog_additions["glm-5.3-flash"])
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.get("/v1/models", token=False)
+        self.assertEqual(error.exception.code, 403)
+        error.exception.close()
+
+
+class CatalogTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.binary = self.root / "codex"
+        self.binary.write_text("#!/bin/sh\n")
+        self.binary.chmod(0o700)
+        self.cache = self.root / "models.json"
+        self.additions = {
+            slug: json.loads((ROOT / "models" / (slug + ".json")).read_text())
+            for slug in router.COMPANY_ROUTES
+        }
+        self.server = type("CatalogHost", (), {
+            "catalog_binary": self.binary,
+            "catalog_cache": self.cache,
+            "catalog_additions": self.additions,
+        })()
+        router.CATALOG_STATE.update(binary=None, identity=None, mtime=0, error=None, refresh_count=0)
+
+    def run_catalog(self, model):
+        result = type("Result", (), {"returncode": 0, "stdout": json.dumps({"models": [model]})})()
+        with patch.object(router.subprocess, "run", return_value=result) as command:
+            payload = router.catalog_payload(self.server)
+        return payload, command
+
+    def test_new_bundled_model_keeps_cache_in_sync(self):
+        first, _ = self.run_catalog({"slug": "gpt-6.1-sol", "visibility": "list"})
+        os.utime(self.binary, None)
+        second, _ = self.run_catalog({"slug": "gpt-6.2-fixture", "visibility": "list"})
+        self.assertEqual([m["slug"] for m in first["models"]],
+                         ["gpt-6.1-sol", "glm-5.3-flash", "deepseek-v4-1-flash-261017"])
+        self.assertEqual([m["slug"] for m in second["models"]],
+                         ["gpt-6.2-fixture", "glm-5.3-flash", "deepseek-v4-1-flash-261017"])
+        cached = json.loads(self.cache.read_text())
+        self.assertEqual(cached, second)
+
+    def test_failed_refresh_uses_last_known_good_cache(self):
+        first, _ = self.run_catalog({"slug": "gpt-fixture", "visibility": "hide"})
+        os.utime(self.binary, None)
+        with patch.object(router.subprocess, "run", side_effect=RuntimeError("fixture")):
+            second = router.catalog_payload(self.server)
+        self.assertEqual(second, first)
+        self.assertEqual(second["models"][0]["visibility"], "list")
+
+    def test_first_refresh_failure_fails_without_fake_catalog(self):
+        with patch.object(router.subprocess, "run", side_effect=RuntimeError("fixture")):
+            with self.assertRaises(ValueError):
+                router.catalog_payload(self.server)
 
 
 class SettingsTests(unittest.TestCase):

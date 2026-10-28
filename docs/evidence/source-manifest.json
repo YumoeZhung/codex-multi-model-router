@@ -88,5 +88,12 @@
     "component": "skills/multi-model-workflow/tests/test_workflow.py",
     "source": "session-2/skill/tests/test_workflow.py",
     "source_sha256": "92b9621fc8851f6583e767bc1acfa96fb15cbda3d694e09d09687ee7855c1f30"
+  },
+  {
+    "kind": "installed_codex_cli",
+    "identity": "macOS ChatGPT desktop bundled Codex CLI",
+    "sha256": "d84a54b031085f01e3ad915ea7c72ebea4dcf69e90f0d1e0e4a637e8280991d2",
+    "observed_at": "2026-10-28",
+    "purpose": "source for dynamic catalog compatibility fixture; binary not redistributed"
   }
 ]

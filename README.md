@@ -8,18 +8,20 @@
 
 | 组件 | 作用 |
 |---|---|
-| `router.py` | 仅监听 `127.0.0.1`；按模型分流；隔离 GPT 登录头；保留工具调用关联 |
+| `router.py` | 仅监听 `127.0.0.1`；按模型分流；隔离 GPT 登录头；动态生成模型菜单；保留工具调用关联 |
 | `tool_search_adapter.py` | 将 client `tool_search` 转为普通函数，再将结果转回 Codex 协议；支持 SSE 与非流式响应 |
 | `models/` | 两个外部模型的目录模板；默认 `max`、1,048,576 上下文、95% 有效比例 |
 | `manage.py` | 检查、安装、状态、工具发现开关、配置合并恢复、可选 Skill 安装 |
 | `skills/multi-model-workflow/` | 主 Agent 决策与验收，辅助模型可配置；原生或 CLI 派发、限轮限时、失败停止、独立卸载 |
 | `tests/`、`docs/evidence/` | 可重跑的离线回归、原会话验证摘要及来源哈希 |
 
-模型 ID 为 `glm-5.3-flash` 与 `deepseek-v4-1-flash-260910`。GPT 条目在安装时从**接收者自己的模型缓存**生成，仓库不附带某个账号的 GPT 模型权限或提示词缓存。
+模型 ID 为 `glm-5.3-flash` 与 `deepseek-v4-1-flash-261017`。本项目使用 provider 范围的动态 `model_catalog_url`：每次启动 Codex 时，由本地路由读取**当前已安装 Codex 的 bundled catalog**，因此升级后新增的 GPT 条目会自动出现；仓库不附带模型权限或提示词内容。
+
+动态目录只替换基础 GPT 菜单的来源，DeepSeek 和 GLM 仍由本仓库追加。上游读取失败时使用上次成功缓存的 `models.json`，首次读取就失败则明确报错，不伪造一份可用的旧菜单。菜单可见不代表账号具有调用权限；订阅或套餐到期仍会得到上游不可用错误。
 
 ## 安装
 
-要求 macOS、Python **3.11+**、可用的 Codex 桌面与原生 ChatGPT 登录、支持 **Responses API** 的两个网关。运行测试还需要 Git。仅有 Chat Completions 接口的网关不能直接使用。
+要求 macOS、Python **3.11+**、可用的 Codex 桌面与原生 ChatGPT 登录、支持 **Responses API** 的两个网关。安装器会自动查找 `codex`；也可用 `--codex-cli /absolute/path/to/codex` 明确指定当前桌面自带的 CLI。运行测试还需要 Git。仅有 Chat Completions 接口的网关不能直接使用。
 
 ```sh
 cp config/router.example.json router.local.json
@@ -27,12 +29,14 @@ cp config/router.example.json router.local.json
 # URL 指向 /responses 之前的前缀，例如 https://gateway.example/v1。
 # 网关需要 Bearer key 时填写 api_key_env，值为环境变量名，不要填写密钥。
 python3.11 manage.py check --settings router.local.json
+# 如果 PATH 中没有 codex：
+# python3.11 manage.py check --settings router.local.json --codex-cli /path/to/codex
 ```
 
 完成检查后保存工作，退出 Codex，在外部终端安装：
 
 ```sh
-python3.11 manage.py install --settings router.local.json
+python3.11 manage.py install --settings router.local.json --codex-cli /path/to/codex
 python3.11 manage.py status
 ```
 
@@ -72,7 +76,8 @@ python3.11 scripts/verify.py
 python3.11 scripts/check_release.py
 ```
 
-- 原会话验证过两种外部模型的工具发现 → 调用 → 压缩 → 继续任务，以及 GPT 协议回归；本次整合重跑的是离线测试与本地 HTTP 模拟上游测试，详见 [验证记录](docs/validation.md)。
+- 原会话验证过两种外部模型的工具发现 → 调用 → 压缩 → 继续任务，以及 GPT 协议回归；本次动态目录迁移重跑了 40 项离线测试，包括新版 Codex 新增模型自动出现、首次失败不回退假目录、成功后失败使用最后有效缓存，以及安装/恢复生命周期。
+- 动态目录依赖当前 Codex CLI 的 `debug models --bundled`。不同版本若删除该命令，菜单请求会优先使用最后一次成功缓存；升级后应检查 `manage.py status`、菜单与一次真实模型请求。
 - 1M 是当前模板配置，历史最大实测输入分别约为 DeepSeek 340K、GLM 257K，**未测试满 1M**；接入其他网关时应核对它自己的限额。
 - 手机端选择 DeepSeek 后绕过本地路由的问题仍未解决；本项目交付范围是 macOS 本地部署。
 - 工具发现不是联网搜索；适配器不执行工具、不代替 Codex 授权，也不保证每种第三方工具协议兼容。

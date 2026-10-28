@@ -1,0 +1,21 @@
+{
+  "version": "0.4.0",
+  "recorded_at": "2026-10-28T10:16:50+08:00",
+  "source_summary": "The previous model router used a static full GPT catalog, so it masked Codex updates. This validation checks the provider-scoped dynamic catalog and DeepSeek model rename.",
+  "test_summary": "Ran 66 tests in 10.178s",
+  "tests_passed": true,
+  "release_scan": "Scanned 43 publishable files; 0 findings.",
+  "fixture_sha256": {
+    "router.py": "e673ce73d112e513b6faa0e798e788d13247b8c538426338344bec837dd368a3",
+    "manage.py": "70f4a70319bfb3ec5c597269f8d6fb8d22ee7047fe00c0c5bd9cf8b9b5ba7ba0",
+    "config/router.example.json": "37dab6dd23ca686efb09b63153909b68ce50f7d515cb67903c34b3483a7939c2",
+    "models/deepseek-v4-1-flash-261017.json": "e341222b75c06482d32ec66d57a2df27e6c885506cee0799fc27e0e55e3166ab",
+    "models/glm-5.3-flash.json": "b9d94a763e32f12f90390d386d51217728ff3cbdb72447732676b6f2a8d38604",
+    "tests/fixtures/codex-cli-bundled/models.json": "9e01cd50ec8c4ba6d782413d1154cb2dbe1da63e014d622631b0603bc19659d6"
+  },
+  "boundaries": [
+    "Offline tests and isolated LaunchAgent installation only.",
+    "No production account inference or gateway credentials were used.",
+    "A visible model does not prove subscription or account entitlement."
+  ]
+}

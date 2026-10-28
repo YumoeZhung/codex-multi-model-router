@@ -4,7 +4,7 @@
       "base_url": "https://glm.example.invalid/v1",
       "api_key_env": ""
     },
-    "deepseek-v4-1-flash-260910": {
+    "deepseek-v4-1-flash-261017": {
       "base_url": "https://deepseek.example.invalid/v1",
       "api_key_env": ""
     }

@@ -72,7 +72,10 @@ class LifecycleTests(unittest.TestCase):
         with socket.socket() as sock:
             sock.bind(("127.0.0.1", 0))
             port = sock.getsockname()[1]
-        return self.manager.install(self.settings, port=port)
+        return self.manager.install(
+            self.settings, port=port, codex_cli=ROOT / "tests/fixtures/codex-cli",
+            launch_agents=self.root / "LaunchAgents",
+        )
 
     def test_install_restore_preserves_later_unrelated_settings(self):
         self.install()
@@ -93,6 +96,20 @@ class LifecycleTests(unittest.TestCase):
         self.assertFalse(self.service.running)
         self.assertFalse(self.manager.plist.exists())
         self.assertEqual(self.auth.read_text(), "unread fixture credentials")
+
+    def test_install_configures_provider_scoped_dynamic_catalog(self):
+        self.install()
+        installed = tomllib.loads(self.manager.config.read_text())
+        provider = installed["model_providers"][m.PROVIDER]
+        self.assertEqual(provider["model_catalog_url"],
+                         f"http://127.0.0.1:{self.manager.state()['port']}/v1/models")
+        self.assertNotIn("model_catalog_json", installed)
+        service = plistlib.loads(self.manager.plist.read_bytes())
+        arguments = service["ProgramArguments"]
+        self.assertEqual(arguments[arguments.index("--catalog-cache") + 1],
+                         str(self.manager.target / "models.json"))
+        self.assertEqual(arguments[arguments.index("--catalog-binary") + 1],
+                         str(ROOT / "tests/fixtures/codex-cli"))
 
     def test_start_failure_rolls_back(self):
         self.service.fail_start = 1
@@ -143,15 +160,26 @@ class LifecycleTests(unittest.TestCase):
 
     def test_toggle_changes_only_company_flags(self):
         self.install()
-        before = json.loads((self.manager.target / "models.json").read_text())
+        templates = {
+            slug: json.loads((self.manager.target / "model-templates" / (slug + ".json")).read_text())
+            for slug in m.COMPANY_ROUTES
+        }
         self.manager.tool_search(False)
-        after = json.loads((self.manager.target / "models.json").read_text())
-        expected = copy.deepcopy(before)
-        for model in expected["models"][1:]:
-            model["supports_search_tool"] = False
-        self.assertEqual(after, expected)
+        after = {
+            slug: json.loads((self.manager.target / "model-templates" / (slug + ".json")).read_text())
+            for slug in m.COMPANY_ROUTES
+        }
+        for slug in m.COMPANY_ROUTES:
+            self.assertFalse(after[slug]["supports_search_tool"])
+            expected = copy.deepcopy(templates[slug])
+            expected["supports_search_tool"] = False
+            self.assertEqual(after[slug], expected)
         self.manager.tool_search(True)
-        self.assertEqual(json.loads((self.manager.target / "models.json").read_text()), before)
+        restored = {
+            slug: json.loads((self.manager.target / "model-templates" / (slug + ".json")).read_text())
+            for slug in m.COMPANY_ROUTES
+        }
+        self.assertEqual(restored, templates)
 
     def test_toggle_failed_restart_restores_files(self):
         self.install()

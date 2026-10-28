@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — 2026-10-28
+
+- Update the DeepSeek model ID from `deepseek-v4-1-flash-260910` to `deepseek-v4-1-flash-261017`.
+- Serve a provider-scoped dynamic model catalog from the loopback router.
+- Read GPT entries from the installed Codex bundled catalog at startup, so Codex upgrades add new GPT models without regenerating a static menu.
+- Append only GLM and DeepSeek templates; cache the last successful merged catalog for transient refresh failures.
+- Add dynamic-catalog, binary upgrade, cache fallback, and isolated-install regressions.
+
+
 ## 0.3.0 — 2026-10-09
 
 - Consolidate the three source conversations into one portable project.
