@@ -5,7 +5,7 @@ flowchart TD
     C[Codex 模型菜单 / CLI] --> R[127.0.0.1 本地 Responses 路由]
     R -->|gpt-*，本机登录头| O[ChatGPT Codex 上游]
     R --> C[当前安装 Codex 的 bundled catalog]
-    R -->|glm-5.3-flash，独立请求头| A[工具发现适配器]
+    R -->|glm-5-3-flash-260828，独立请求头| A[工具发现适配器]
     R -->|deepseek-v4-1-flash-261017，独立请求头| A
     A --> G[用户配置的 GLM 网关]
     A --> D[用户配置的 DeepSeek 网关]

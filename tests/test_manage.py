@@ -136,7 +136,7 @@ class LifecycleTests(unittest.TestCase):
 
     def test_restore_refuses_changed_owned_field(self):
         self.install()
-        raw = self.manager.config.read_text().replace('model = "gpt-fixture"', 'model = "glm-5.3-flash"')
+        raw = self.manager.config.read_text().replace('model = "gpt-fixture"', 'model = "glm-5-3-flash-260828"')
         self.manager.config.write_text(raw)
         with self.assertRaises(ValueError):
             self.manager.restore()

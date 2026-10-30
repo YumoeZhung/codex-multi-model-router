@@ -168,12 +168,12 @@ class HttpTests(unittest.TestCase):
                          ["gpt-6-astra", "gpt-6.1-sol", "gpt-6.1-terra", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol",
                           "gpt-5.6-terra", "gpt-5.6-luna", "gpt-daybreak-blue-latest",
                           "gpt-daybreak-red-latest", "gpt-5.5", "codex-auto-review",
-                          "glm-5.3-flash", "deepseek-v4-1-flash-261017"])
+                          "glm-5-3-flash-260828", "deepseek-v4-1-flash-261017"])
         self.assertIn("gpt-6.1-sol", [m["slug"] for m in catalog["models"]])
         self.assertIn("gpt-6-astra", [m["slug"] for m in catalog["models"]])
         self.assertTrue((self.root / "catalog-cache.json").exists())
         self.assertEqual(catalog["models"][-2],
-                         self.server.catalog_additions["glm-5.3-flash"])
+                         self.server.catalog_additions["glm-5-3-flash-260828"])
         with self.assertRaises(urllib.error.HTTPError) as error:
             self.get("/v1/models", token=False)
         self.assertEqual(error.exception.code, 403)
@@ -211,9 +211,9 @@ class CatalogTests(unittest.TestCase):
         os.utime(self.binary, None)
         second, _ = self.run_catalog({"slug": "gpt-6.2-fixture", "visibility": "list"})
         self.assertEqual([m["slug"] for m in first["models"]],
-                         ["gpt-6.1-sol", "glm-5.3-flash", "deepseek-v4-1-flash-261017"])
+                         ["gpt-6.1-sol", "glm-5-3-flash-260828", "deepseek-v4-1-flash-261017"])
         self.assertEqual([m["slug"] for m in second["models"]],
-                         ["gpt-6.2-fixture", "glm-5.3-flash", "deepseek-v4-1-flash-261017"])
+                         ["gpt-6.2-fixture", "glm-5-3-flash-260828", "deepseek-v4-1-flash-261017"])
         cached = json.loads(self.cache.read_text())
         self.assertEqual(cached, second)
 

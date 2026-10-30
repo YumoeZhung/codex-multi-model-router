@@ -15,7 +15,7 @@
 | `skills/multi-model-workflow/` | 主 Agent 决策与验收，辅助模型可配置；原生或 CLI 派发、限轮限时、失败停止、独立卸载 |
 | `tests/`、`docs/evidence/` | 可重跑的离线回归、原会话验证摘要及来源哈希 |
 
-模型 ID 为 `glm-5.3-flash` 与 `deepseek-v4-1-flash-261017`。本项目使用 provider 范围的动态 `model_catalog_url`：每次启动 Codex 时，由本地路由读取**当前已安装 Codex 的 bundled catalog**，因此升级后新增的 GPT 条目会自动出现；仓库不附带模型权限或提示词内容。
+模型 ID 为 `glm-5-3-flash-260828` 与 `deepseek-v4-1-flash-261017`。本项目使用 provider 范围的动态 `model_catalog_url`：每次启动 Codex 时，由本地路由读取**当前已安装 Codex 的 bundled catalog**，因此升级后新增的 GPT 条目会自动出现；仓库不附带模型权限或提示词内容。
 
 动态目录只替换基础 GPT 菜单的来源，DeepSeek 和 GLM 仍由本仓库追加。上游读取失败时使用上次成功缓存的 `models.json`，首次读取就失败则明确报错，不伪造一份可用的旧菜单。菜单可见不代表账号具有调用权限；订阅或套餐到期仍会得到上游不可用错误。
 

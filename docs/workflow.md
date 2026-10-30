@@ -6,7 +6,7 @@
 
 主 Agent 先判断任务是否明确、结果是否容易核验、错误后果是否可控、交接是否划算。辅助模型可取证、提出反例、扩充候选或执行明确任务，最终判断与验收留给主 Agent。模型意见一致不构成正确性证据。
 
-默认辅助模型与强度来自 Skill 的 `defaults.json`，再由 `$CODEX_HOME/multi-model-workflow.json` 或每次 `--assistant-model` 覆盖。精确可用 ID 包括 `glm-5.3-flash`、`deepseek-v4-1-flash-261017`。默认 3 轮、单次 300 秒、总计 1200 秒；失败不自动换 GPT。
+默认辅助模型与强度来自 Skill 的 `defaults.json`，再由 `$CODEX_HOME/multi-model-workflow.json` 或每次 `--assistant-model` 覆盖。精确可用 ID 包括 `glm-5-3-flash-260828`、`deepseek-v4-1-flash-261017`。默认 3 轮、单次 300 秒、总计 1200 秒；失败不自动换 GPT。
 
 ## 安装与启用
 

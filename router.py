@@ -22,7 +22,7 @@ ToolSearchAdapter = _adapter_module.ToolSearchAdapter
 
 OPENAI_BASE = "https://chatgpt.com/backend-api/codex"
 GLM_BASE = "https://glm.example.invalid/v1"
-GLM_MODEL = "glm-5.3-flash"
+GLM_MODEL = "glm-5-3-flash-260828"
 DEEPSEEK_BASE = "https://deepseek.example.invalid/v1"
 DEEPSEEK_MODEL = "deepseek-v4-1-flash-261017"
 COMPANY_ROUTES = {

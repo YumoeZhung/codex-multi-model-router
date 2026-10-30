@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 — 2026-10-30
+
+- Update the GLM model ID from `glm-5.3-flash` to `glm-5-3-flash-260828`.
+- Keep historical validation evidence and old model-name backups unchanged.
+- Clarify that the repository contains placeholder gateway URLs only; real deployment URLs remain machine-local.
+
 ## 0.4.0 — 2026-10-28
 
 - Update the DeepSeek model ID from `deepseek-v4-1-flash-260910` to `deepseek-v4-1-flash-261017`.

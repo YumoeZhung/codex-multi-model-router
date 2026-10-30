@@ -3,7 +3,7 @@ from router import select_route, normalize_history, OPENAI_BASE, GLM_BASE, DEEPS
 
 class RoutingTests(unittest.TestCase):
     def test_glm_never_receives_openai_credentials(self):
-        base, headers, route = select_route("glm-5.3-flash", {
+        base, headers, route = select_route("glm-5-3-flash-260828", {
             "Authorization": "Bearer test-secret", "Cookie": "private",
             "ChatGPT-Account-ID": "private-account", "X-Codex-Router-Token": "local-secret",
             "Session-ID": "private-session", "Content-Type": "application/json"})

@@ -1,6 +1,6 @@
 {
   "routes": {
-    "glm-5.3-flash": {
+    "glm-5-3-flash-260828": {
       "base_url": "https://glm.example.invalid/v1",
       "api_key_env": ""
     },
